@@ -1,0 +1,10 @@
+# Commit Message Language
+
+当由 AI/Agent 生成 git commit message 时，**主要使用中文**。
+- 遵循约定式提交（Conventional Commits）：类型用英文（feat/fix/docs 等），描述用中文。
+- 简洁清晰，说明本次改动的目的或内容。
+
+示例：
+- feat: 添加用户登录功能
+- fix: 修复首页样式错误
+- docs: 更新 README 说明
