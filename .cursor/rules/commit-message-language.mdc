@@ -1,3 +1,7 @@
+---
+alwaysApply: true
+---
+
 # Commit Message Language
 
 当由 AI/Agent 生成 git commit message 时，**主要使用中文**。
