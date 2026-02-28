@@ -1,0 +1,6 @@
+{
+	"dependencies": {
+		"@langchain/openai": "^1.2.11",
+		"dotenv": "^17.3.1"
+	}
+}
