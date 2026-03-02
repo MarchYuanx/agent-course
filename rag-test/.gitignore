@@ -1,0 +1,25 @@
+# 依赖
+node_modules/
+
+# 环境变量与敏感配置
+.env
+.env.*
+!.env.example
+
+# 锁文件（可选：若希望提交锁文件可删除下面几行）
+*-lock.json
+*-lock.*
+*.lock
+
+# 系统与编辑器
+.DS_Store
+Thumbs.db
+*.log
+.idea/
+.vscode/
+
+# 构建与临时
+dist/
+build/
+*.tmp
+.cache/
