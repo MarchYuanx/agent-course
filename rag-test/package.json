@@ -11,6 +11,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@langchain/classic": "^1.0.21",
     "@langchain/core": "^1.1.29",
     "@langchain/openai": "^1.2.11",
     "dotenv": "^17.3.1"
