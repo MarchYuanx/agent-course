@@ -1,5 +1,5 @@
 - langchain
-- tool
+- [tool](./tool-test/README.md) — LangChain 工具、MCP 自建/多服务、Agent 循环与常见问题
 - rag
 - memory
 - mcp
