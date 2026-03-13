@@ -1,5 +1,16 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { Layout, Button, Typography, Select, Input, Tooltip, Tag, Alert } from 'antd';
+import {
+  PlusOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
+  DeleteOutlined,
+  RobotOutlined,
+  UserOutlined,
+} from '@ant-design/icons';
 import { parseSSE } from './lib/sse';
+import { PERSONAS, type PersonaId } from './lib/personas';
+import { MarkdownContent } from './components/MarkdownContent';
 import './App.css';
 
 type Message = { role: 'user' | 'assistant'; content: string };
@@ -8,7 +19,12 @@ type Session = {
   id: string;
   title: string;
   messages: Message[];
+  personaId?: PersonaId;
 };
+
+const { Sider, Header, Content } = Layout;
+const { TextArea } = Input;
+const { Text } = Typography;
 
 const STORAGE_KEY = 'chatbot-sessions';
 
@@ -37,6 +53,7 @@ function getSessionTitle(messages: Message[]): string {
 function App() {
   const [sessions, setSessions] = useState<Session[]>(loadSessions);
   const [currentId, setCurrentId] = useState<string | null>(null);
+  const [personaId, setPersonaId] = useState<PersonaId>('default');
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -46,6 +63,7 @@ function App() {
 
   const currentSession = sessions.find((s) => s.id === currentId);
   const messages = currentSession?.messages ?? [];
+  const activePersonaId = currentSession?.personaId ?? personaId;
 
   useEffect(() => {
     saveSessions(sessions);
@@ -57,11 +75,11 @@ function App() {
 
   const newSession = useCallback(() => {
     const id = crypto.randomUUID();
-    const session: Session = { id, title: '新对话', messages: [] };
+    const session: Session = { id, title: '新对话', messages: [], personaId };
     setSessions((prev) => [session, ...prev]);
     setCurrentId(id);
     setError(null);
-  }, []);
+  }, [personaId]);
 
   const selectSession = useCallback((id: string) => {
     setCurrentId(id);
@@ -84,7 +102,7 @@ function App() {
     let sessionId = currentId;
     if (!sessionId || !currentSession) {
       const id = crypto.randomUUID();
-      const session: Session = { id, title: '新对话', messages: [] };
+      const session: Session = { id, title: '新对话', messages: [], personaId };
       setSessions((prev) => [session, ...prev]);
       setCurrentId(id);
       sessionId = id;
@@ -106,6 +124,7 @@ function App() {
     setLoading(true);
 
     const apiMessages = history.map((m) => ({ role: m.role, content: m.content }));
+    const sessionPersona = sessions.find((s) => s.id === sessionId)?.personaId ?? personaId;
 
     abortRef.current = new AbortController();
     const signal = abortRef.current.signal;
@@ -114,7 +133,7 @@ function App() {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: apiMessages }),
+        body: JSON.stringify({ messages: apiMessages, personaId: sessionPersona }),
         signal,
       });
 
@@ -153,30 +172,44 @@ function App() {
       setLoading(false);
       abortRef.current = null;
     }
-  }, [input, loading, currentId, currentSession, sessions, scrollToBottom]);
+  }, [input, loading, currentId, currentSession, sessions, personaId, scrollToBottom]);
 
   const stop = useCallback(() => {
     abortRef.current?.abort();
   }, []);
 
   return (
-    <div className={`app ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
-      <aside className="sidebar">
+    <Layout className={`app ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+      <Sider
+        width={260}
+        collapsedWidth={64}
+        collapsible
+        collapsed={sidebarCollapsed}
+        trigger={null}
+        className="sidebar"
+      >
         <div className="sidebar-header">
-          <h1 className="logo">YuanBot 原宝</h1>
-          <button
-            type="button"
+          <Typography.Title level={4} className="logo" style={{ margin: 0 }}>
+            <RobotOutlined style={{ marginRight: 8 }} />
+            YuanBot 原宝
+          </Typography.Title>
+          <Button
+            type="text"
+            size="small"
             className="btn-icon collapse"
+            icon={sidebarCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            title={sidebarCollapsed ? '展开侧边栏' : '收起侧边栏'}
-          >
-            {sidebarCollapsed ? '→' : '←'}
-          </button>
+          />
         </div>
-        <button type="button" className="btn-new" onClick={newSession}>
-          <span className="icon">+</span>
+        <Button
+          type="dashed"
+          block
+          icon={<PlusOutlined />}
+          className="btn-new"
+          onClick={newSession}
+        >
           <span className="session-label">新对话</span>
-        </button>
+        </Button>
         <nav className="session-list">
           {sessions.map((s) => (
             <div
@@ -184,45 +217,73 @@ function App() {
               className={`session-item ${s.id === currentId ? 'active' : ''}`}
               onClick={() => selectSession(s.id)}
             >
+              <UserOutlined style={{ fontSize: 14, marginRight: 4 }} />
               <span className="session-title">{s.title}</span>
-              <button
-                type="button"
-                className="btn-icon delete"
-                onClick={(e) => deleteSession(s.id, e)}
-                title="删除对话"
-              >
-                ×
-              </button>
+              <Tooltip title="删除对话">
+                <Button
+                  type="text"
+                  size="small"
+                  className="btn-icon delete"
+                  icon={<DeleteOutlined />}
+                  onClick={(e) => deleteSession(s.id, e)}
+                />
+              </Tooltip>
             </div>
           ))}
         </nav>
-      </aside>
+      </Sider>
 
-      <main className="main">
-        <header className="header">
-          <p className="subtitle">基于 DeepSeek 的智能助手</p>
-        </header>
+      <Layout className="main">
+        <Header className="header">
+          <div className="header-row">
+            <Text style={{ color: 'var(--text-muted)' }}>当前身份</Text>
+            <Select<PersonaId>
+              className="persona-select"
+              value={activePersonaId}
+              onChange={(v) => {
+                setPersonaId(v);
+                if (currentSession) {
+                  setSessions((prev) =>
+                    prev.map((s) => (s.id === currentId ? { ...s, personaId: v } : s)),
+                  );
+                }
+              }}
+              options={PERSONAS.map((p) => ({ label: p.label, value: p.id }))}
+            />
+          </div>
+        </Header>
 
-        <div className="chat" ref={listRef}>
+        <Content className="chat" ref={listRef}>
           {messages.length === 0 && (
             <div className="empty">
-              <p>输入消息开始对话，或从左侧选择已有会话</p>
+              <Text type="secondary">输入消息开始对话，或从左侧选择已有会话</Text>
             </div>
           )}
           {messages.map((m, i) => (
             <div key={i} className={`message ${m.role}`}>
-              <span className="role">{m.role === 'user' ? '你' : 'AI'}</span>
+              <div>
+                <Tag color={m.role === 'user' ? 'blue' : 'cyan'}>
+                  {m.role === 'user' ? '你' : '原宝'}
+                </Tag>
+              </div>
               <div className="content">
-                {m.content || (loading && i === messages.length - 1 ? '...' : '')}
+                <MarkdownContent
+                  content={m.content || (loading && i === messages.length - 1 ? '...' : '')}
+                  className="md-content"
+                />
               </div>
             </div>
           ))}
-        </div>
+        </Content>
 
-        {error && <div className="error">{error}</div>}
+        {error && (
+          <div className="error">
+            <Alert type="error" message={error} showIcon />
+          </div>
+        )}
 
         <div className="input-wrap">
-          <textarea
+          <TextArea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
@@ -231,22 +292,27 @@ function App() {
                 send();
               }
             }}
-            placeholder="输入消息..."
-            rows={1}
+            placeholder="输入消息，按 Enter 发送，Shift + Enter 换行"
+            autoSize={{ minRows: 1, maxRows: 4 }}
             disabled={loading}
           />
           {loading ? (
-            <button type="button" className="btn stop" onClick={stop}>
+            <Button type="default" danger className="btn stop" onClick={stop}>
               停止
-            </button>
+            </Button>
           ) : (
-            <button type="button" className="btn send" onClick={send} disabled={!input.trim()}>
+            <Button
+              type="primary"
+              className="btn send"
+              onClick={send}
+              disabled={!input.trim()}
+            >
               发送
-            </button>
+            </Button>
           )}
         </div>
-      </main>
-    </div>
+      </Layout>
+    </Layout>
   );
 }
 

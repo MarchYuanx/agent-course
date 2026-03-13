@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { buildSystemPrompt } from './personas';
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
@@ -18,7 +19,13 @@ export class ChatService {
     this.modelName = this.config.get<string>('modelName') ?? '';
   }
 
-  async streamChat(messages: ChatMessage[]): Promise<Response> {
+  async streamChat(messages: ChatMessage[], personaId?: string): Promise<Response> {
+    const systemPrompt = buildSystemPrompt(personaId);
+    const fullMessages: ChatMessage[] = [
+      { role: 'system', content: systemPrompt },
+      ...messages.filter((m) => m.role !== 'system'),
+    ];
+
     const res = await fetch(`${this.baseUrl}/chat/completions`, {
       method: 'POST',
       headers: {
@@ -27,7 +34,7 @@ export class ChatService {
       },
       body: JSON.stringify({
         model: this.modelName,
-        messages,
+        messages: fullMessages,
         stream: true,
       }),
     });

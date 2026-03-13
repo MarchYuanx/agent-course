@@ -1,6 +1,6 @@
 # YuanBot 原宝
 
-基于 DeepSeek API 的 Web 聊天应用，NestJS 后端 + React 前端，支持流式输出。
+智能对话应用，NestJS 后端 + React 前端，支持流式输出与多身份切换。
 
 ## 环境要求
 
@@ -10,12 +10,12 @@
 ## 配置
 
 1. 复制 `server/.env.example` 为 `server/.env`
-2. 填入你的 API 配置：
+2. 填入你的 API 配置（支持 OpenAI 兼容接口）：
 
 ```
 API_KEY=your_api_key
-BASE_URL=https://api.deepseek.com/v1
-MODEL_NAME=deepseek-chat
+BASE_URL=https://api.example.com/v1
+MODEL_NAME=your-model-name
 ```
 
 ## 运行

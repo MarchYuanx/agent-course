@@ -8,17 +8,17 @@ export class ChatController {
 
   @Post('chat')
   async chat(
-    @Body() body: { messages: ChatMessage[] },
+    @Body() body: { messages: ChatMessage[]; personaId?: string },
     @Res({ passthrough: false }) res: Response,
   ) {
-    const { messages } = body ?? {};
+    const { messages, personaId } = body ?? {};
     if (!Array.isArray(messages) || messages.length === 0) {
       res.status(400).json({ error: 'messages is required and must be non-empty' });
       return;
     }
 
     try {
-      const upstreamRes = await this.chatService.streamChat(messages);
+      const upstreamRes = await this.chatService.streamChat(messages, personaId);
       const stream = upstreamRes.body;
       if (!stream) {
         res.status(502).json({ error: 'No response body from API' });
